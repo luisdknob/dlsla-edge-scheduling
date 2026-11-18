@@ -1,0 +1,11 @@
+UCC 2021 reproducibility snapshot
+Copyright 2021 Luis Augusto Dias Knob, Carlos Henrique Kayser,
+Paulo Silas Severo de Souza, Tiago Ferreto
+
+This repository contains the paper-era ContainerSim simulator and the archived
+result metrics used for the UCC 2021 paper "Enforcing Deployment Latency SLA in
+Edge Infrastructures through Multi-objective Genetic Scheduler."
+
+The simulation code is derived from ContainerSim. See ERRATA.md for the
+compatibility changes and the differences between the archived and published
+results. The original run reports are available on the main branch.
