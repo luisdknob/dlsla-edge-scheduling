@@ -4,17 +4,6 @@ This repository contains the ContainerSim experiments for UCC 2021. The study ev
 
 Luis Augusto Dias Knob, Carlos Henrique Kayser, Paulo Silas Severo de Souza, and Tiago Ferreto (2021). *Enforcing Deployment Latency SLA in Edge Infrastructures through Multi-objective Genetic Scheduler*. IEEE/ACM International Conference on Utility and Cloud Computing. [Paper](https://doi.org/10.1145/3468737.3494100)
 
-## Release Note
-
-> [!NOTE]
-> This post-publication release is part of an ongoing effort to improve the reproducibility and verifiability of my research. For this paper, I am making the source code and experimental configurations publicly available. I plan to gradually release artifacts from more of my research projects over time.
->
-> I used GPT-6.2 Sol and DeepSeek V4.1 Flash 1017 to help prepare this repository, fix minor execution issues, and review the code and results against the published paper. I kept the code here as close as possible to the implementation used in the original experiments.
->
-> The archive preserves the original seeds. A fresh run with the same seed can produce different results because UUID generation and the order in which layers are processed also affect the simulation. See [Archived Replay](#archived-replay) for what was reproduced and under which conditions.
->
-> I documented minor corrections and clarifications in the [errata](ERRATA.md). The results still support the paper’s main conclusions.
-
 ## Simulation Scenario
 
 The simulator uses the 197-node Ipê topology and 24 Docker Hub images. The three schedulers are evaluated under each of the following SLA distributions.
@@ -27,9 +16,8 @@ The simulator uses the 197-node Ipê topology and 24 Docker Hub images. The thre
 
 ### Dataset
 
-- The [original source archive](archive/ucc-original-source.zip) includes the paper-era Python sources, analysis scripts, and scenario files.
-- The [original run reports](archive/reports-090921.7z) contain timing JSON and host-occupation CSV files. The [errata](ERRATA.md#table-3) explains which runs contributed to each block of the published table.
-- The runnable copy uses the [scenario files](data/scenarios/) and [seed lists](data/seeds.json). Its compatibility adjustments are documented under [source provenance](expected/README.md#source-provenance).
+- The original source and run report archives are in `archive/` on `main`. The [errata](ERRATA.md#table-3) explains which reports contributed to the published table.
+- The runnable copy uses the [scenario files](data/scenarios/) and [seed lists](data/seeds.json). The [additional-run reports](data/additional-runs/) are used for the corrected Table 3.
 
 ### Settings and Execution
 
@@ -61,9 +49,19 @@ python scripts/run_all.py --set random --limit 1
 python scripts/validate.py
 ```
 
-The validator compares the [included run summaries](expected/runs.csv) with the printed SLA and latency values. The [errata](ERRATA.md#table-3) explains the differences.
+The validator recomputes the SLA and latency statistics in Table 3 from the included per-run metrics. See [Table 3 in the errata](ERRATA.md#table-3) for differences from the printed table.
 
-The `analysis-fixed` branch reconstructs the published SLA and latency statistics from the original reports. It also contains the corrected Table 3 in `expected/table3_corrected_270.md` and commands to recompute its values.
+To analyze the original timing reports on `analysis-fixed`, extract `reports-090921.7z` and point `--reports` to the extracted `reports/` directory.
+
+```bash
+python scripts/analyze.py --reports /path/to/reports --mode paper
+python scripts/validate.py --runs results/runs_paper.csv --strict
+
+python scripts/analyze.py --reports /path/to/reports --mode corrected \
+  --cohort complete --summary-out results/table3_corrected_270.csv
+```
+
+The first command reconstructs the published SLA and latency block from 261 runs. The corrected command uses full application IDs and the 270 runs described in the [analysis notes](expected/README.md#corrected-analysis).
 
 ### Archived Replay
 

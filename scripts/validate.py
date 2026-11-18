@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate UCC 2021 Table 3 from the expected per-run metrics."""
+"""Summarize UCC 2021 runs or compare them with Table 3."""
 import argparse
 import csv
 import os
@@ -32,15 +32,15 @@ def aggregate(rows):
             rr = [r for r in rows if r["scenario"] == scen and r["scheduler"] == sched]
             if not rr:
                 continue
-            out[(scen, sched)] = {
+            metrics = {
                 "n": len(rr),
-                "fulfilled": statistics.fmean(float(r["fulfilled"]) for r in rr),
-                "fulfilled_std": statistics.stdev(float(r["fulfilled"]) for r in rr),
-                "over": statistics.fmean(float(r["over_sla"]) for r in rr),
-                "over_std": statistics.stdev(float(r["over_sla"]) for r in rr),
-                "all": statistics.fmean(float(r["all_avg"]) for r in rr),
-                "all_std": statistics.stdev(float(r["all_avg"]) for r in rr),
+                "groups": statistics.fmean(float(r["n_groups"]) for r in rr),
             }
+            for metric, column in [("fulfilled", "fulfilled"), ("over", "over_sla"), ("all", "all_avg")]:
+                values = [float(r[column]) for r in rr]
+                metrics[metric] = statistics.fmean(values)
+                metrics[metric + "_std"] = statistics.stdev(values) if len(values) > 1 else None
+            out[(scen, sched)] = metrics
     return out
 
 
@@ -48,14 +48,40 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--runs", default=os.path.join(ROOT, "expected", "runs.csv"))
     ap.add_argument("--strict", action="store_true")
+    ap.add_argument("--summary", action="store_true",
+                    help="summarize results without comparing with the paper")
     args = ap.parse_args()
 
-    rows = list(csv.DictReader(open(args.runs)))
+    if args.summary and args.strict:
+        ap.error("--strict requires comparison with Table 3")
+    with open(args.runs, newline="") as f:
+        rows = list(csv.DictReader(f))
     agg = aggregate(rows)
+    if not agg:
+        ap.error(f"no matching runs in {args.runs}")
+    seeds = {(r["scenario"], r["scheduler"], r["seed"]) for r in rows}
+    if len(seeds) != len(rows):
+        ap.error(f"duplicate scenario, scheduler and seed in {args.runs}")
+
+    if args.summary:
+        print(f"{'scenario':8s} {'scheduler':15s} {'runs':>4s} {'groups':>8s} "
+              f"{'fulfilled':>10s} {'over (s)':>9s} {'all (s)':>9s}")
+        for (scenario, scheduler), a in agg.items():
+            print(f"{scenario:8s} {scheduler:15s} {a['n']:4d} {a['groups']:8.2f} "
+                  f"{a['fulfilled']:10.2f} {a['over']:9.2f} {a['all']:9.2f}")
+        return
+
     print(f"{'scenario':8s} {'scheduler':15s} {'n':>3s} "
           f"{'fulfilled':>10s} {'paper':>8s} {'over':>8s} {'paper':>8s} "
           f"{'all':>8s} {'paper':>8s}")
     failed = False
+    if args.strict:
+        for key in PAPER:
+            n = agg.get(key, {}).get("n", 0)
+            required = 29
+            if n < required:
+                print("FAIL", key, f"only {n} of {required} required runs", file=sys.stderr)
+                failed = True
     for key in sorted(agg, key=lambda k: (ORDER[k[0]], SCHED[k[1]])):
         a = agg[key]
         p = PAPER[key]
@@ -70,7 +96,7 @@ def main():
             (a["all"], p[4], "all apps"),
             (a["all_std"], p[5], "all apps std"),
         ]:
-            if abs(got - want) > 1.0:
+            if got is not None and abs(got - want) > 1.0:
                 print("FAIL", key, name, got, want, file=sys.stderr)
                 failed = True
     if args.strict and failed:
