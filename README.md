@@ -4,17 +4,6 @@ This repository contains the ContainerSim experiments for UCC 2021. The study ev
 
 Luis Augusto Dias Knob, Carlos Henrique Kayser, Paulo Silas Severo de Souza, and Tiago Ferreto (2021). *Enforcing Deployment Latency SLA in Edge Infrastructures through Multi-objective Genetic Scheduler*. IEEE/ACM International Conference on Utility and Cloud Computing. [Paper](https://doi.org/10.1145/3468737.3494100)
 
-## Release Note
-
-> [!NOTE]
-> This post-publication release is part of an ongoing effort to improve the reproducibility and verifiability of my research. For this paper, I am making the source code and experimental configurations publicly available. I plan to gradually release artifacts from more of my research projects over time.
->
-> I used GPT-6.2 Sol and DeepSeek V4.1 Flash 1017 to help prepare this repository, fix minor execution issues, and review the code and results against the published paper. I kept the code here as close as possible to the implementation used in the original experiments.
->
-> The archive preserves the original seeds. A fresh run with the same seed can produce different results because UUID generation and the order in which layers are processed also affect the simulation. See [Archived Replay](#archived-replay) for what was reproduced and under which conditions.
->
-> I documented minor corrections and clarifications in the [errata](ERRATA.md). The results still support the paper’s main conclusions.
-
 ## Simulation Scenario
 
 The simulator uses the 197-node Ipê topology and 24 Docker Hub images. The three schedulers are evaluated under each of the following SLA distributions.
@@ -27,9 +16,8 @@ The simulator uses the 197-node Ipê topology and 24 Docker Hub images. The thre
 
 ### Dataset
 
-- The [original source archive](archive/ucc-original-source.zip) includes the paper-era Python sources, analysis scripts, and scenario files.
-- The [original run reports](archive/reports-090921.7z) contain timing JSON and host-occupation CSV files. The [errata](ERRATA.md#table-3) explains which runs contributed to each block of the published table.
-- The runnable copy uses the [scenario files](data/scenarios/) and [seed lists](data/seeds.json). Its compatibility adjustments are documented under [source provenance](expected/README.md#source-provenance).
+- The original source and run report archives are in `archive/` on `main`. The [errata](ERRATA.md#table-3) explains which reports contributed to the published table.
+- The runnable copy uses the [scenario files](data/scenarios/) and [seed lists](data/seeds.json).
 
 ### Settings and Execution
 
@@ -61,13 +49,19 @@ python scripts/run_all.py --set random --limit 1
 python scripts/validate.py
 ```
 
-The validator compares the [included run summaries](expected/runs.csv) with the printed SLA and latency values. The [errata](ERRATA.md#table-3) explains the differences.
-
-The `analysis-fixed` branch reconstructs the published SLA and latency statistics from the original reports. It also contains the corrected Table 3 in `expected/table3_corrected_270.md` and commands to recompute its values.
+The validator compares the [included run summaries](expected/runs.csv) with the printed SLA and latency values. Use the `analysis-fixed` branch to reconstruct the published statistics from the archive and recompute the corrected Table 3.
 
 ### Archived Replay
 
-The `archive-replay` branch uses the original seeds and recovered layer order to reproduce the tested runs. [Replay notes](expected/README.md#archived-replay)
+The `archive-replay` branch can restore the execution order for a preserved run. Extract `archive/reports-090921.7z` from `main` and keep the timing JSON and host-occupation CSV in the same directory.
+
+```bash
+python scripts/replay_archive.py \
+  data/scenarios/scenario-2-sla.json \
+  /path/to/reports/random_scenario/scenario-2-sla-163295-container_all_times.json
+```
+
+The helper uses the archived seed and recovered layer order, recreates the Windows UUID random sequence, and compares both regenerated reports. [Replay audit](expected/README.md#archived-replay)
 
 ## Citation
 

@@ -1,6 +1,6 @@
 # Archived UCC 2021 reports
 
-[The original report archive](../archive/reports-090921.7z) contains 270 complete timing JSON and host-occupation CSV pairs across the three scenario directories, plus earlier experimental files. See the [errata](../ERRATA.md#table-3) for the run sets used in the printed table.
+The original report archive (`archive/reports-090921.7z` on `main`) contains 270 complete timing JSON and host-occupation CSV pairs across the three scenario directories, plus earlier experimental files. See the [errata](../ERRATA.md#table-3) for the run sets used in the printed table.
 
 ## Per-run summaries
 
@@ -23,7 +23,11 @@ The compatibility changes defer the Basemap import, honor seed zero, and remove 
 
 ## Archived Replay
 
-The report filenames preserve seeds from the original runs. The standard run commands use local Python behavior, so a run with the same seed can produce different placements and timings. The `archive-replay` branch documents the verified replay procedure.
+A standard macOS run with an archived seed can differ in two ways. The Windows CPython 3.9 implementation of `uuid1()` takes draws from the same random stream as the scheduler. The macOS native path skips those draws. The scenario loader also deduplicates layers with a set, whose iteration order determines the download queue.
+
+The helper uses the archived seed, restores the Windows-style random draws for UUID generation, and infers the layer order from each replica's original successful downloads. The layer order was recoverable for all 270 archived runs in the audit. Node choices and timing values are computed by the simulator.
+
+The timing JSON and host-occupation CSV matched exactly after line-ending normalization in ten tested runs covering all nine scheduler and SLA combinations. The timing reports contained 109,860 rows.
 
 ## Published Cohorts
 
